@@ -1,20 +1,12 @@
 package com.anadev.account_service.service;
-
-import com.anadev.account_service.dto.AccountRequest;
-import com.anadev.account_service.dto.AccountResponse;
 import com.anadev.account_service.dto.UserRequestDto;
 import com.anadev.account_service.dto.UserResponseDto;
-import com.anadev.account_service.entity.Account;
 import com.anadev.account_service.entity.User;
-import com.anadev.account_service.exepcions.AccountNottFoundException;
 import com.anadev.account_service.exepcions.UserNotFoundException;
 import com.anadev.account_service.repository.AccountRepository;
 import com.anadev.account_service.repository.UserRepository;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-
-import javax.security.auth.login.AccountNotFoundException;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -39,6 +31,37 @@ public class UserService {
 
        return UserResponseDto.fromEntity(user);
     }
+
+    public List<UserResponseDto> findAllUsers(){
+        return userRepository.findAll()
+                .stream()
+                .map(user -> UserResponseDto.fromEntity(user))
+                .collect(Collectors.toList());
+    }
+
+    public UserResponseDto updateUserName(Long id, UserRequestDto data){
+        User user = userRepository.findById(id)
+                .orElseThrow(()-> new UserNotFoundException());
+
+        user.setName(data.name());
+        userRepository.save(user);
+
+        return UserResponseDto.fromEntity(user);
+    }
+
+    public UserResponseDto updateUserEmail(Long id, UserRequestDto data){
+        User user = userRepository.findById(id)
+                .orElseThrow(()-> new UserNotFoundException());
+
+        user.setEmail(data.email());
+        userRepository.save(user);
+
+        return UserResponseDto.fromEntity(user);
+    }
+
+
+
+
 
 
 
