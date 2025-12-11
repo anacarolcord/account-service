@@ -40,46 +40,9 @@ public class UserService {
        return UserResponseDto.fromEntity(user);
     }
 
-    @Transactional
-    public AccountResponse addNewAccount (AccountRequest data, Long id){
-        User user = userRepository.findById(id)
-                .orElseThrow(()-> new UserNotFoundException());
-
-        Account account = new Account();
-        account.setName(data.name());
-        account.setCurrency(data.currency());
-        account.setCurrentBalance(data.currentBalance());
-        account.setTypeAccount(data.typeAccount());
-        account.setMonthlyLimit(data.monthlyLimit());
-
-        accountRepository.save(account);
-        user.getAccounts().add(account);
-        userRepository.save(user);
-
-        return AccountResponse.fromEntity(account);
-    }
-
-    public List<AccountResponse> findAllAccountsFromUser(Long id){
-        User user = userRepository.findById(id)
-                .orElseThrow(()-> new UserNotFoundException());
-
-        List<Account> accounts = user.getAccounts();
-
-        return accounts.stream().map(account -> AccountResponse.fromEntity(account))
-                .collect(Collectors.toList());
-    }
-
-    public AccountResponse updateAccount(AccountRequest data, Long idUser, Long idAccount){
-        User user = userRepository.findById(idUser)
-                .orElseThrow(()-> new UserNotFoundException());
-
-        List<Account> accounts = user.getAccounts();
 
 
 
-
-
-    }
 
 
 
