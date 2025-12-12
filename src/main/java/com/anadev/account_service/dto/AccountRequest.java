@@ -11,6 +11,6 @@ public record AccountRequest(
         String name,
         TypeAccount typeAccount,
         TypeCurrency currency,
-        DecimalFormat currentBalance,
-        DecimalFormat monthlyLimit
+        Double currentBalance,
+        Double monthlyLimit
 ){}

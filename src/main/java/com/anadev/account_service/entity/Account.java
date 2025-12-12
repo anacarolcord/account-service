@@ -22,8 +22,8 @@ public class Account {
     private String name;
     private TypeAccount typeAccount;
     private TypeCurrency currency;
-    private DecimalFormat currentBalance;
-    private DecimalFormat monthlyLimit;
+    private Double currentBalance;
+    private Double monthlyLimit;
 
     @ManyToOne
     @JoinColumn(name = "id_user")

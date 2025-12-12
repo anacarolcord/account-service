@@ -12,8 +12,8 @@ public record AccountResponse(
         String name,
         TypeAccount typeAccount,
         TypeCurrency currency,
-        DecimalFormat currentBalance,
-        DecimalFormat monthlyLimit)
+        Double currentBalance,
+        Double monthlyLimit)
 {
     public static AccountResponse fromEntity(Account account){
         return new AccountResponse(
