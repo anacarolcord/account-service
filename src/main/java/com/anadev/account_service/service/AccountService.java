@@ -2,8 +2,10 @@ package com.anadev.account_service.service;
 
 import com.anadev.account_service.dto.AccountRequest;
 import com.anadev.account_service.dto.AccountResponse;
+import com.anadev.account_service.dto.UserResponseDto;
 import com.anadev.account_service.entity.Account;
 import com.anadev.account_service.entity.User;
+import com.anadev.account_service.entity.enums.TypeAccount;
 import com.anadev.account_service.exepcions.AccountNottFoundException;
 import com.anadev.account_service.exepcions.UserNotFoundException;
 import com.anadev.account_service.repository.AccountRepository;
@@ -22,9 +24,8 @@ public class AccountService {
     private final UserRepository userRepository;
 
     @Transactional
-    public AccountResponse addNewAccount (AccountRequest data, Long id){
-        User user = userRepository.findById(id)
-                .orElseThrow(()-> new UserNotFoundException());
+    public AccountResponse addNewAccount (AccountRequest data, Long idUser){
+        User user = getUser(idUser);
 
         Account account = new Account();
         account.setName(data.name());
@@ -42,8 +43,7 @@ public class AccountService {
 
     @Transactional
     public List<AccountResponse> findAllAccountsFromUser(Long id){
-        User user = userRepository.findById(id)
-                .orElseThrow(()-> new UserNotFoundException());
+        User user = getUser(id);
 
         List<Account> accounts = user.getAccounts();
 
@@ -53,14 +53,11 @@ public class AccountService {
 
     @Transactional
     public AccountResponse updateMonthlyLimitAccount(AccountRequest data, Long idUser, Long idAccount){
-        User user = userRepository.findById(idUser)
-                .orElseThrow(()-> new UserNotFoundException());
+        Account accountUser = getAccountUser(idAccount,idUser);
 
-        Account accountUser = user
-                .getAccounts()
-                .stream()
-                .filter(account -> account.getIdAccount().equals(idAccount))
-                .findAny().orElseThrow(()-> new AccountNottFoundException());
+        if(!accountUser.getTypeAccount().equals(TypeAccount.CARTAO_CREDITO)){
+            throw new IllegalArgumentException("The limit can only be changed if the account is a credit card");
+        }
 
         accountUser.setMonthlyLimit(data.monthlyLimit());
         //TODO algum metodo que guarde o historico para usar para o microsserviço de relatorio
@@ -71,14 +68,8 @@ public class AccountService {
 
     @Transactional
     public AccountResponse updateCurrentBalanceAccount(AccountRequest data, Long idUser, Long idAccount){
-        User user = userRepository.findById(idUser)
-                .orElseThrow(()-> new UserNotFoundException());
 
-        Account accountUser = user
-                .getAccounts()
-                .stream()
-                .filter(account -> account.getIdAccount().equals(idAccount))
-                .findAny().orElseThrow(()-> new AccountNottFoundException());
+        Account accountUser = getAccountUser(idAccount,idUser);
 
         accountUser.setCurrentBalance(data.currentBalance());
         //TODO algum metodo que guarde o historico para usar para o microsserviço de relatorio
@@ -89,14 +80,8 @@ public class AccountService {
 
     @Transactional
     public AccountResponse updateCurrencyAccount(AccountRequest data, Long idUser, Long idAccount){
-        User user = userRepository.findById(idUser)
-                .orElseThrow(()-> new UserNotFoundException());
 
-        Account accountUser = user
-                .getAccounts()
-                .stream()
-                .filter(account -> account.getIdAccount().equals(idAccount))
-                .findAny().orElseThrow(()-> new AccountNottFoundException());
+        Account accountUser = getAccountUser(idAccount, idUser);
 
         accountUser.setCurrency(data.currency());
         //TODO algum metodo que guarde o historico para usar para o microsserviço de relatorio
@@ -104,6 +89,25 @@ public class AccountService {
 
         return AccountResponse.fromEntity(accountUser);
     }
+
+    @Transactional
+    public User getUser(Long idUser){
+        return userRepository.findById(idUser)
+                .orElseThrow(()-> new UserNotFoundException());
+    }
+
+    public Account getAccountUser(Long idAccount, Long idUser){
+        User user = getUser(idUser);
+
+        return user
+                .getAccounts()
+                .stream()
+                .filter(account -> account.getIdAccount().equals(idAccount))
+                .findAny().orElseThrow(()-> new AccountNottFoundException());
+    }
+
+
+
 
 
 }

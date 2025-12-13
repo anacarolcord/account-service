@@ -59,6 +59,11 @@ public class UserService {
         return UserResponseDto.fromEntity(user);
     }
 
+    public User getUser(Long idUser){
+        return userRepository.findById(idUser)
+                .orElseThrow(()-> new UserNotFoundException());
+    }
+
 
 
 
