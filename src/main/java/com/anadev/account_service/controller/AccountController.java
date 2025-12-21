@@ -24,6 +24,11 @@ public class AccountController {
         return accountService.findAllAccountsFromUser(idUser);
     }
 
+    @GetMapping("/users/{idUser}/accounts/{idAccount}")
+    public AccountResponse getAccountById(@PathVariable Long idAccount){
+        return accountService.findById(idAccount);
+    }
+
     @PatchMapping("/{idAccount}/limit")
     public AccountResponse updateMonthlyLimit (@RequestBody AccountRequest data, @PathVariable Long idAccount, @PathVariable Long idUser){
 

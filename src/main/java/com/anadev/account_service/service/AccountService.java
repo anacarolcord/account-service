@@ -41,6 +41,13 @@ public class AccountService {
         return AccountResponse.fromEntity(account);
     }
 
+    public AccountResponse findById(Long idAccount){
+        Account account = accountRepository.findById(idAccount)
+                .orElseThrow(() -> new AccountNottFoundException());
+
+        return AccountResponse.fromEntity(account);
+    }
+
     @Transactional
     public List<AccountResponse> findAllAccountsFromUser(Long id){
         User user = getUser(id);
