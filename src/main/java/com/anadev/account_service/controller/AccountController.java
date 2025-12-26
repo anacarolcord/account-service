@@ -2,10 +2,13 @@ package com.anadev.account_service.controller;
 
 import com.anadev.account_service.dto.AccountRequest;
 import com.anadev.account_service.dto.AccountResponse;
+import com.anadev.account_service.dto.AccountUpdateCurrencyBalance;
+import com.anadev.account_service.dto.AccountUpdateMonthlyLimit;
 import com.anadev.account_service.service.AccountService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
@@ -24,21 +27,26 @@ public class AccountController {
         return accountService.findAllAccountsFromUser(idUser);
     }
 
-    @GetMapping("/users/{idUser}/accounts/{idAccount}")
+    @GetMapping("/{idAccount}")
     public AccountResponse getAccountById(@PathVariable Long idAccount){
         return accountService.findById(idAccount);
     }
 
+    @GetMapping("/{idAccount}/limit")
+    public BigDecimal getMonthlyLimit(Long userId, Long accountId){
+        return accountService.getMonthlyLimit(userId,accountId);
+    }
+
     @PatchMapping("/{idAccount}/limit")
-    public AccountResponse updateMonthlyLimit (@RequestBody AccountRequest data, @PathVariable Long idAccount, @PathVariable Long idUser){
+    public AccountResponse updateMonthlyLimit (@RequestBody AccountUpdateMonthlyLimit data, @PathVariable Long idAccount, @PathVariable Long idUser){
 
         return accountService.updateMonthlyLimitAccount(data,idUser,idAccount);
     }
 
     @PatchMapping("/{idAccount}/balance")
-    public AccountResponse updateCurrentBalanceAccount (@RequestBody AccountRequest data, @PathVariable Long idAccount, @PathVariable Long idUser){
+    public AccountResponse updateCurrentBalanceAccount (@RequestBody AccountUpdateCurrencyBalance value, @PathVariable Long idAccount, @PathVariable Long idUser){
 
-        return accountService.updateCurrentBalanceAccount(data,idUser,idAccount);
+        return accountService.updateCurrentBalanceAccount(value,idUser,idAccount);
     }
 
     @PatchMapping("/{idAccount}/currency")

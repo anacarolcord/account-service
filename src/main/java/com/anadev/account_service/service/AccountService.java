@@ -1,8 +1,10 @@
 package com.anadev.account_service.service;
 
+import com.anadev.account_service.client.dto.enums.TypeTransaction;
 import com.anadev.account_service.dto.AccountRequest;
 import com.anadev.account_service.dto.AccountResponse;
-import com.anadev.account_service.dto.UserResponseDto;
+import com.anadev.account_service.dto.AccountUpdateCurrencyBalance;
+import com.anadev.account_service.dto.AccountUpdateMonthlyLimit;
 import com.anadev.account_service.entity.Account;
 import com.anadev.account_service.entity.User;
 import com.anadev.account_service.entity.enums.TypeAccount;
@@ -14,6 +16,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -59,7 +62,7 @@ public class AccountService {
     }
 
     @Transactional
-    public AccountResponse updateMonthlyLimitAccount(AccountRequest data, Long idUser, Long idAccount){
+    public AccountResponse updateMonthlyLimitAccount(AccountUpdateMonthlyLimit data, Long idUser, Long idAccount){
         Account accountUser = getAccountUser(idAccount,idUser);
 
         if(!accountUser.getTypeAccount().equals(TypeAccount.CARTAO_CREDITO)){
@@ -74,11 +77,17 @@ public class AccountService {
     }
 
     @Transactional
-    public AccountResponse updateCurrentBalanceAccount(AccountRequest data, Long idUser, Long idAccount){
+    public AccountResponse updateCurrentBalanceAccount(AccountUpdateCurrencyBalance data, Long idUser, Long idAccount){
 
         Account accountUser = getAccountUser(idAccount,idUser);
 
-        accountUser.setCurrentBalance(data.currentBalance());
+        BigDecimal value = data.currencyBalance();
+
+        if(data.typeTransaction().equals(TypeTransaction.SAIDA)){
+            subtract(accountUser,value);
+        }else if(data.typeTransaction().equals(TypeTransaction.ENTRADA)){
+            sum(accountUser,value);
+        }
         //TODO algum metodo que guarde o historico para usar para o microsserviço de relatorio
         accountRepository.save(accountUser);
 
@@ -102,6 +111,11 @@ public class AccountService {
         return userRepository.findById(idUser)
                 .orElseThrow(()-> new UserNotFoundException());
     }
+    
+    public BigDecimal getMonthlyLimit(Long idUser, Long idAccount){
+        Account accountUser = getAccountUser(idAccount, idUser);
+        return accountUser.getMonthlyLimit();
+    }
 
     public Account getAccountUser(Long idAccount, Long idUser){
         User user = getUser(idUser);
@@ -111,6 +125,33 @@ public class AccountService {
                 .stream()
                 .filter(account -> account.getIdAccount().equals(idAccount))
                 .findAny().orElseThrow(()-> new AccountNottFoundException());
+    }
+
+    public AccountResponse subtract(Account account, BigDecimal value){
+        //if type transaction == Saida
+        BigDecimal currentBalance = account.getCurrentBalance();
+
+        if(!(value.compareTo(currentBalance) <= 0)){
+            throw new IllegalArgumentException("Insufficient funds");
+        }
+        currentBalance = currentBalance.subtract(value);
+
+        account.setCurrentBalance(currentBalance);
+        accountRepository.save(account);
+        return AccountResponse.fromEntity(account);
+    }
+
+    public AccountResponse sum(Account account, BigDecimal value){
+
+        BigDecimal currentBalance = account.getCurrentBalance();
+
+        currentBalance = currentBalance.add(value);
+
+        account.setCurrentBalance(currentBalance);
+        accountRepository.save(account);
+
+        return  AccountResponse.fromEntity(account);
+
     }
 
 

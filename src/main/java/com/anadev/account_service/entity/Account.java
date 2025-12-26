@@ -8,6 +8,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.text.DecimalFormat;
 
 @Entity
@@ -22,8 +23,8 @@ public class Account {
     private String name;
     private TypeAccount typeAccount;
     private TypeCurrency currency;
-    private Double currentBalance;
-    private Double monthlyLimit;
+    private BigDecimal currentBalance;
+    private BigDecimal monthlyLimit;
 
     @ManyToOne
     @JoinColumn(name = "id_user")
