@@ -3,8 +3,7 @@ package com.anadev.account_service.service;
 import com.anadev.account_service.client.dto.enums.TypeTransaction;
 import com.anadev.account_service.dto.AccountRequest;
 import com.anadev.account_service.dto.AccountResponse;
-import com.anadev.account_service.dto.AccountUpdateCurrencyBalance;
-import com.anadev.account_service.dto.AccountUpdateMonthlyLimit;
+import com.anadev.account_service.dto.AccountUpdateValues;
 import com.anadev.account_service.entity.Account;
 import com.anadev.account_service.entity.User;
 import com.anadev.account_service.entity.enums.TypeAccount;
@@ -46,7 +45,7 @@ public class AccountService {
 
     public AccountResponse findById(Long idAccount){
         Account account = accountRepository.findById(idAccount)
-                .orElseThrow(() -> new AccountNottFoundException());
+                .orElseThrow(AccountNottFoundException::new);
 
         return AccountResponse.fromEntity(account);
     }
@@ -57,19 +56,44 @@ public class AccountService {
 
         List<Account> accounts = user.getAccounts();
 
-        return accounts.stream().map(account -> AccountResponse.fromEntity(account))
+        return accounts.stream().map(AccountResponse::fromEntity)
                 .collect(Collectors.toList());
     }
 
-    @Transactional
-    public AccountResponse updateMonthlyLimitAccount(AccountUpdateMonthlyLimit data, Long idUser, Long idAccount){
-        Account accountUser = getAccountUser(idAccount,idUser);
+    public AccountResponse updateValues(AccountUpdateValues data, Long idAccount){
+        Account account = accountRepository.findById(idAccount)
+                .orElseThrow(AccountNottFoundException::new);
 
-        if(!accountUser.getTypeAccount().equals(TypeAccount.CARTAO_CREDITO)){
+        TypeAccount typeAccount = account.getTypeAccount();
+
+        AccountResponse response;
+
+        if (typeAccount.equals(TypeAccount.CARTAO_CREDITO) ) {
+            response = updateMonthlyLimitAccount(data,account);
+        }else{
+            response = updateCurrentBalanceAccount(data,account);
+        }
+
+        return response;
+    }
+
+    @Transactional
+    public AccountResponse updateMonthlyLimitAccount(AccountUpdateValues data, Account accountUser){
+
+        if(!accountUser.getTypeAccount().equals(TypeAccount.CARTAO_CREDITO) || !data.typeTransaction().equals(TypeTransaction.SAIDA)){
             throw new IllegalArgumentException("The limit can only be changed if the account is a credit card");
         }
 
-        accountUser.setMonthlyLimit(data.monthlyLimit());
+        BigDecimal currentMonthlyLimit = this.getMonthlyLimit(accountUser.getIdAccount());
+
+        if(!(data.value().compareTo(currentMonthlyLimit) <= 0)){
+            throw new IllegalArgumentException("Value above the available limit! This is your current limit: " + currentMonthlyLimit);
+            //TODO disparo de evento de alerta no RabbitMQ (processamento assíncrono)
+        }else{
+            currentMonthlyLimit = currentMonthlyLimit.subtract(data.value());
+            accountUser.setMonthlyLimit(currentMonthlyLimit);
+        }
+
         //TODO algum metodo que guarde o historico para usar para o microsserviço de relatorio
         accountRepository.save(accountUser);
 
@@ -77,55 +101,32 @@ public class AccountService {
     }
 
     @Transactional
-    public AccountResponse updateCurrentBalanceAccount(AccountUpdateCurrencyBalance data, Long idUser, Long idAccount){
-
-        Account accountUser = getAccountUser(idAccount,idUser);
-
-        BigDecimal value = data.currencyBalance();
+    public AccountResponse updateCurrentBalanceAccount(AccountUpdateValues data, Account accountUser){
 
         if(data.typeTransaction().equals(TypeTransaction.SAIDA)){
-            subtract(accountUser,value);
-        }else if(data.typeTransaction().equals(TypeTransaction.ENTRADA)){
-            sum(accountUser,value);
+            return subtract(accountUser,data.value());
         }
-        //TODO algum metodo que guarde o historico para usar para o microsserviço de relatorio
-        accountRepository.save(accountUser);
+        if(data.typeTransaction().equals(TypeTransaction.ENTRADA)){
+            return sum(accountUser,data.value());
+        }
 
-        return AccountResponse.fromEntity(accountUser);
-    }
-
-    @Transactional
-    public AccountResponse updateCurrencyAccount(AccountRequest data, Long idUser, Long idAccount){
-
-        Account accountUser = getAccountUser(idAccount, idUser);
-
-        accountUser.setCurrency(data.currency());
-        //TODO algum metodo que guarde o historico para usar para o microsserviço de relatorio
-        accountRepository.save(accountUser);
-
-        return AccountResponse.fromEntity(accountUser);
+        throw new RuntimeException("Erro ");
     }
 
     @Transactional
     public User getUser(Long idUser){
         return userRepository.findById(idUser)
-                .orElseThrow(()-> new UserNotFoundException());
+                .orElseThrow(UserNotFoundException::new);
     }
     
-    public BigDecimal getMonthlyLimit(Long idUser, Long idAccount){
-        Account accountUser = getAccountUser(idAccount, idUser);
+    public BigDecimal getMonthlyLimit(Long idAccount){
+        Account accountUser = accountRepository.findById(idAccount)
+                .orElseThrow(AccountNottFoundException::new);
+
         return accountUser.getMonthlyLimit();
     }
 
-    public Account getAccountUser(Long idAccount, Long idUser){
-        User user = getUser(idUser);
 
-        return user
-                .getAccounts()
-                .stream()
-                .filter(account -> account.getIdAccount().equals(idAccount))
-                .findAny().orElseThrow(()-> new AccountNottFoundException());
-    }
 
     public AccountResponse subtract(Account account, BigDecimal value){
         //if type transaction == Saida

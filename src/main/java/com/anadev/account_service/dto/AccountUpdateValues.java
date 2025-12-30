@@ -4,7 +4,7 @@ import com.anadev.account_service.client.dto.enums.TypeTransaction;
 
 import java.math.BigDecimal;
 
-public record AccountUpdateCurrencyBalance(
-        BigDecimal currencyBalance,
+public record AccountUpdateValues(
+        BigDecimal value,
         TypeTransaction typeTransaction) {
 }
