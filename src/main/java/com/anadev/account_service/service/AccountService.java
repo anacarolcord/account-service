@@ -60,6 +60,7 @@ public class AccountService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional
     public AccountResponse updateValues(AccountUpdateValues data, Long idAccount){
         Account account = accountRepository.findById(idAccount)
                 .orElseThrow(AccountNottFoundException::new);
@@ -78,25 +79,27 @@ public class AccountService {
     }
 
     @Transactional
-    public AccountResponse updateMonthlyLimitAccount(AccountUpdateValues data, Account accountUser){
-
-        if(!accountUser.getTypeAccount().equals(TypeAccount.CARTAO_CREDITO) || !data.typeTransaction().equals(TypeTransaction.SAIDA)){
-            throw new IllegalArgumentException("The limit can only be changed if the account is a credit card");
+    public AccountResponse updateMonthlyLimitAccount(AccountUpdateValues data, Account accountUser) {
+        // 1. Validar se é saída (compra no cartão)
+        if (!data.typeTransaction().equals(TypeTransaction.SAIDA)) {
+            // Se for "ENTRADA" no cartão, seria como pagar a fatura (diminuir a dívida)
+            //processCreditCardPayment(data, accountUser);
         }
 
-        BigDecimal currentMonthlyLimit = this.getMonthlyLimit(accountUser.getIdAccount());
+        BigDecimal valorCompra = data.value();
+        BigDecimal limiteTotal = accountUser.getMonthlyLimit();
+        BigDecimal saldoDevedorAtual = accountUser.getCurrentBalance();
 
-        if(!(data.value().compareTo(currentMonthlyLimit) <= 0)){
-            throw new IllegalArgumentException("Value above the available limit! This is your current limit: " + currentMonthlyLimit);
-            //TODO disparo de evento de alerta no RabbitMQ (processamento assíncrono)
-        }else{
-            currentMonthlyLimit = currentMonthlyLimit.subtract(data.value());
-            accountUser.setMonthlyLimit(currentMonthlyLimit);
+        // 2. Verificar se a compra estoura o limite
+        // Regra: (Saldo Devedor + Nova Compra) não pode ser maior que o Limite Total
+        if (saldoDevedorAtual.add(valorCompra).compareTo(limiteTotal) > 0) {
+            // TODO evento para o RabbitMQ avisando o estouro
+            throw new IllegalArgumentException("Limite excedido! Disponível: " + limiteTotal.subtract(saldoDevedorAtual));
         }
 
-        //TODO algum metodo que guarde o historico para usar para o microsserviço de relatorio
+        accountUser.setCurrentBalance(saldoDevedorAtual.add(valorCompra));
+
         accountRepository.save(accountUser);
-
         return AccountResponse.fromEntity(accountUser);
     }
 
