@@ -16,7 +16,6 @@ import java.util.stream.Collectors;
 
 public class UserService {
     private final UserRepository userRepository;
-    private final AccountRepository accountRepository;
 
     public UserResponseDto saveUser(UserRequestDto data){
         User user = data.toEntity();
@@ -27,7 +26,7 @@ public class UserService {
 
     public UserResponseDto findUser(Long id){
        User user = userRepository.findById(id)
-               .orElseThrow(()-> new UserNotFoundException());
+               .orElseThrow(UserNotFoundException::new);
 
        return UserResponseDto.fromEntity(user);
     }
@@ -35,13 +34,13 @@ public class UserService {
     public List<UserResponseDto> findAllUsers(){
         return userRepository.findAll()
                 .stream()
-                .map(user -> UserResponseDto.fromEntity(user))
+                .map(UserResponseDto::fromEntity)
                 .collect(Collectors.toList());
     }
 
     public UserResponseDto updateUserName(Long id, UserRequestDto data){
         User user = userRepository.findById(id)
-                .orElseThrow(()-> new UserNotFoundException());
+                .orElseThrow(UserNotFoundException::new);
 
         user.setName(data.name());
         userRepository.save(user);
@@ -51,7 +50,7 @@ public class UserService {
 
     public UserResponseDto updateUserEmail(Long id, UserRequestDto data){
         User user = userRepository.findById(id)
-                .orElseThrow(()-> new UserNotFoundException());
+                .orElseThrow(UserNotFoundException::new);
 
         user.setEmail(data.email());
         userRepository.save(user);
@@ -61,7 +60,7 @@ public class UserService {
 
     public User getUser(Long idUser){
         return userRepository.findById(idUser)
-                .orElseThrow(()-> new UserNotFoundException());
+                .orElseThrow(UserNotFoundException::new);
     }
 
 

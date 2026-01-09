@@ -25,7 +25,7 @@ public class UserController {
         return userService.saveUser(data);
     }
 
-    @GetMapping({"/idUser"})
+    @GetMapping({"/{idUser}"})
     public UserResponseDto getUserById(@PathVariable Long idUser){
         return userService.findUser(idUser);
     }
@@ -35,13 +35,13 @@ public class UserController {
         return userService.findAllUsers();
     }
 
-    @PatchMapping({"/idUser"})
-    public UserResponseDto updateUserName(@RequestBody UserRequestDto data, @PathVariable Long id){
-        return userService.updateUserName(id,data);
+    @PatchMapping({"/{idUser}"})
+    public UserResponseDto updateUserName(@RequestBody UserRequestDto data, @PathVariable Long idUser){
+        return userService.updateUserName(idUser,data);
     }
 
-    @PatchMapping({"/idUser"})
-    public UserResponseDto updateUserEmail(@RequestBody UserRequestDto data, @PathVariable Long id){
-        return userService.updateUserEmail(id,data);
+    @PatchMapping({"/{idUser}"})
+    public UserResponseDto updateUserEmail(@RequestBody UserRequestDto data, @PathVariable Long idUser){
+        return userService.updateUserEmail(idUser,data);
     }
 }
