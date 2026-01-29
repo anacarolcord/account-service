@@ -37,8 +37,7 @@ public class AccountService {
         account.setMonthlyLimit(data.monthlyLimit());
 
         accountRepository.save(account);
-        user.getAccounts().add(account);
-        userRepository.save(user);
+        user.addAccount(account); //correção
 
         return AccountResponse.fromEntity(account);
     }
