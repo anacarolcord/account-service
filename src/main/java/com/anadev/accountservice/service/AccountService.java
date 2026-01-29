@@ -11,8 +11,10 @@ import com.anadev.accountservice.exepcions.AccountNottFoundException;
 import com.anadev.accountservice.exepcions.UserNotFoundException;
 import com.anadev.accountservice.repository.AccountRepository;
 import com.anadev.accountservice.repository.UserRepository;
+import com.anadev.accountservice.service.strategy.TransactionStrategy;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -24,6 +26,7 @@ import java.util.stream.Collectors;
 public class AccountService {
     private final AccountRepository accountRepository;
     private final UserRepository userRepository;
+    private final ApplicationContext context;//conteiner do spring que guarda todos os beans
 
     @Transactional
     public AccountResponse addNewAccount (AccountRequest data, Long idUser){
@@ -49,7 +52,7 @@ public class AccountService {
         return AccountResponse.fromEntity(account);
     }
 
-    @Transactional
+
     public List<AccountResponse> findAllAccountsFromUser(Long id){
         User user = getUser(id);
 
@@ -105,14 +108,13 @@ public class AccountService {
     @Transactional
     public AccountResponse updateCurrentBalanceAccount(AccountUpdateValues data, Account accountUser){
 
-        if(data.typeTransaction().equals(TypeTransaction.SAIDA)){
-            return subtract(accountUser,data.value());
-        }
-        if(data.typeTransaction().equals(TypeTransaction.ENTRADA)){
-            return sum(accountUser,data.value());
-        }
+        TransactionStrategy strategy = context.getBean(data.typeTransaction().getStrategyBeanName(), TransactionStrategy.class);
 
-        throw new RuntimeException("Erro ");
+        AccountResponse response = strategy.execute(accountUser, data.value());
+
+        accountRepository.save(accountUser);
+
+        return response;
     }
 
     @Transactional
