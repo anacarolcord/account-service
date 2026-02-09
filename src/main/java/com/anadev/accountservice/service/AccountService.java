@@ -9,6 +9,7 @@ import com.anadev.accountservice.entity.User;
 import com.anadev.accountservice.entity.enums.TypeAccount;
 import com.anadev.accountservice.exepcions.AccountNottFoundException;
 import com.anadev.accountservice.exepcions.UserNotFoundException;
+import com.anadev.accountservice.messaging.WarningLimitProducer;
 import com.anadev.accountservice.repository.AccountRepository;
 import com.anadev.accountservice.repository.UserRepository;
 import com.anadev.accountservice.service.strategy.TransactionStrategy;
@@ -19,6 +20,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -27,6 +29,7 @@ public class AccountService {
     private final AccountRepository accountRepository;
     private final UserRepository userRepository;
     private final ApplicationContext context;//conteiner do spring que guarda todos os beans
+    private final WarningLimitProducer producerRabbit;
 
     @Transactional
     public AccountResponse addNewAccount (AccountRequest data, Long idUser){
@@ -82,24 +85,33 @@ public class AccountService {
 
     @Transactional
     public AccountResponse updateMonthlyLimitAccount(AccountUpdateValues data, Account accountUser) {
-        // 1. Validar se é saída (compra no cartão)
-        if (!data.typeTransaction().equals(TypeTransaction.SAIDA)) {
-            // Se for "ENTRADA" no cartão, seria como pagar a fatura (diminuir a dívida)
-            //processCreditCardPayment(data, accountUser);
-        }
 
         BigDecimal valorCompra = data.value();
         BigDecimal limiteTotal = accountUser.getMonthlyLimit();
         BigDecimal saldoDevedorAtual = accountUser.getCurrentBalance();
+        BigDecimal saldoPosTransacao;
+        BigDecimal limitePosTransacao = BigDecimal.ZERO;
 
-        // 2. Verificar se a compra estoura o limite
-        // Regra: (Saldo Devedor + Nova Compra) não pode ser maior que o Limite Total
-        if (saldoDevedorAtual.add(valorCompra).compareTo(limiteTotal) > 0) {
-            // TODO evento para o RabbitMQ avisando o estouro
-            throw new IllegalArgumentException("Limite excedido! Disponível: " + limiteTotal.subtract(saldoDevedorAtual));
+        //se atransacao for de entrada
+        if (data.typeTransaction().equals(TypeTransaction.ENTRADA)) {
+            //processa o pagamento da fatura atual
+            saldoPosTransacao = processCreditCardPayment(data, accountUser);
+
+
+        }else {
+
+            if (saldoDevedorAtual.add(valorCompra).compareTo(limiteTotal) > 0) {
+                producerRabbit.publish();
+                throw new IllegalArgumentException("Limite excedido! Disponível: " + limiteTotal.subtract(saldoDevedorAtual));
+            }
+
+            limitePosTransacao = limiteTotal.subtract(valorCompra);
+            saldoPosTransacao = saldoDevedorAtual.add(valorCompra);
+
         }
 
-        accountUser.setCurrentBalance(saldoDevedorAtual.add(valorCompra));
+        accountUser.setMonthlyLimit(limitePosTransacao);
+        accountUser.setCurrentBalance(saldoPosTransacao);
 
         accountRepository.save(accountUser);
         return AccountResponse.fromEntity(accountUser);
@@ -130,35 +142,30 @@ public class AccountService {
         return accountUser.getMonthlyLimit();
     }
 
+    public BigDecimal processCreditCardPayment(AccountUpdateValues data, Account accountUser){
 
+        BigDecimal currentBalance = accountUser.getCurrentBalance();
+        BigDecimal valorPagamento = data.value();
+        BigDecimal saldoPosPagamento;
+        BigDecimal limiteAtual = accountUser.getMonthlyLimit();
 
-    public AccountResponse subtract(Account account, BigDecimal value){
-        //if type transaction == Saida
-        BigDecimal currentBalance = account.getCurrentBalance();
+        //se o valor do pagamento for maior que o saldo atual
+        if(valorPagamento.compareTo(currentBalance) > 0){
 
-        if(!(value.compareTo(currentBalance) <= 0)){
-            throw new IllegalArgumentException("Insufficient funds");
+            throw new IllegalArgumentException("Valor é acima do valor da fatura atual de R$" + currentBalance);
+
+        } else if ((valorPagamento.compareTo(BigDecimal.ZERO) <= 0)){
+
+            throw new IllegalArgumentException("Operação proibida");
+
+        }else {
+
+             saldoPosPagamento = currentBalance.subtract(valorPagamento);
+             accountUser.setMonthlyLimit(limiteAtual.add(valorPagamento));
         }
-        currentBalance = currentBalance.subtract(value);
 
-        account.setCurrentBalance(currentBalance);
-        accountRepository.save(account);
-        return AccountResponse.fromEntity(account);
+        return saldoPosPagamento;
     }
-
-    public AccountResponse sum(Account account, BigDecimal value){
-
-        BigDecimal currentBalance = account.getCurrentBalance();
-
-        currentBalance = currentBalance.add(value);
-
-        account.setCurrentBalance(currentBalance);
-        accountRepository.save(account);
-
-        return  AccountResponse.fromEntity(account);
-
-    }
-
 
 
 
