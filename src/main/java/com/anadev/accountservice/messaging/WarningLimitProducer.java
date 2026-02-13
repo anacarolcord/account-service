@@ -13,7 +13,7 @@ public class WarningLimitProducer {
 
     public void publish(){
 
-        streamBridge.send("warning", MESSAGE);
+        streamBridge.send("warning-out-0", MESSAGE);
 
     }
 

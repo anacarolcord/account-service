@@ -1,0 +1,45 @@
+spring:
+  application:
+    name: account-service
+
+  # --- Banco de Dados (MySQL) ---
+  datasource:
+    url: jdbc:mysql://localhost:3306/account?useSSL=false&serverTimezone=UTC
+    username: root
+    password: "Out@2025"
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+
+  # --- Docker Compose ---
+  docker:
+    compose:
+      enabled: false
+
+  # --- Configurações do RabbitMQ (Conexão) ---
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+
+  # --- Spring Cloud Stream / RabbitMQ Cloud ---
+  cloud:
+    stream:
+      bindings:
+        # Mapeia o binding 'warning' para a exchange 'warning-exchange'
+        warning-out-0:
+          destination: warning-exchange
+          content-type: application/json
+      rabbit:
+        bindings:
+          warning-out-0:
+            producer:
+              delayed-exchange: false
+              routing-key-expression: "'warning-key'"
