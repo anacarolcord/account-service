@@ -87,10 +87,10 @@ public class AccountService {
     public AccountResponse updateMonthlyLimitAccount(AccountUpdateValues data, Account accountUser) {
 
         BigDecimal valorCompra = data.value();
-        BigDecimal limiteTotal = accountUser.getMonthlyLimit();
-        BigDecimal saldoDevedorAtual = accountUser.getCurrentBalance();
+        BigDecimal limiteAtual = accountUser.getMonthlyLimit();
+        BigDecimal faturaAtual = accountUser.getCurrentBalance();
         BigDecimal saldoPosTransacao;
-        BigDecimal limitePosTransacao = BigDecimal.ZERO;
+        BigDecimal limitePosTransacao = limiteAtual.subtract(valorCompra);
 
         //se atransacao for de entrada
         if (data.typeTransaction().equals(TypeTransaction.ENTRADA)) {
@@ -100,13 +100,19 @@ public class AccountService {
 
         }else {
 
-            if (saldoDevedorAtual.add(valorCompra).compareTo(limiteTotal) > 0) {
-                producerRabbit.publish();
-                throw new IllegalArgumentException("Limite excedido! Disponível: " + limiteTotal.subtract(saldoDevedorAtual));
+            if (faturaAtual.add(valorCompra).compareTo(limiteAtual) > 0) {
+                throw new IllegalArgumentException("Operação proibida, limite insuficiente para a compra! Limite atual R$" + limiteAtual);
             }
 
-            limitePosTransacao = limiteTotal.subtract(valorCompra);
-            saldoPosTransacao = saldoDevedorAtual.add(valorCompra);
+            if (limitePosTransacao.compareTo(BigDecimal.ZERO)< 0){
+                throw new IllegalArgumentException("Operação cancelada, o limite ficaria nulo");
+            }else{
+
+                limitePosTransacao = limiteAtual.subtract(valorCompra);
+                saldoPosTransacao = faturaAtual.add(valorCompra);
+
+
+            }
 
         }
 
@@ -146,22 +152,24 @@ public class AccountService {
 
         BigDecimal currentBalance = accountUser.getCurrentBalance();
         BigDecimal valorPagamento = data.value();
-        BigDecimal saldoPosPagamento;
+        BigDecimal saldoPosPagamento = currentBalance.subtract(valorPagamento);
         BigDecimal limiteAtual = accountUser.getMonthlyLimit();
+        BigDecimal limitePosPagamento;
 
         //se o valor do pagamento for maior que o saldo atual
         if(valorPagamento.compareTo(currentBalance) > 0){
 
             throw new IllegalArgumentException("Valor é acima do valor da fatura atual de R$" + currentBalance);
 
-        } else if ((valorPagamento.compareTo(BigDecimal.ZERO) <= 0)){
+        } else if ((valorPagamento.compareTo(BigDecimal.ZERO) <= 0) || (valorPagamento.compareTo(currentBalance) != 0)){
 
             throw new IllegalArgumentException("Operação proibida");
 
-        }else {
-            //fazer mais um else if que faz a logica caso a transacao seja entrada
+        }else if (valorPagamento.compareTo(currentBalance) == 0){
+
              saldoPosPagamento = currentBalance.subtract(valorPagamento);
-             accountUser.setMonthlyLimit(limiteAtual.add(valorPagamento));
+             limitePosPagamento = limiteAtual.add(valorPagamento);
+             accountUser.setMonthlyLimit(limitePosPagamento);
         }
 
         return saldoPosPagamento;
