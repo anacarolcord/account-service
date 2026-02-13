@@ -21,6 +21,7 @@ public class User {
     private Long idUser;
     private String name;
     private String email;
+    @Enumerated(EnumType.STRING)
     private TypeUser typeUser;
     private LocalDateTime createdAt = LocalDateTime.now();
 

@@ -20,7 +20,9 @@ public class Account {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long idAccount;
     private String name;
+    @Enumerated(EnumType.STRING)
     private TypeAccount typeAccount;
+    @Enumerated(EnumType.STRING)
     private TypeCurrency currency;
     private BigDecimal currentBalance;
     private BigDecimal monthlyLimit;
