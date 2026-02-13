@@ -7,6 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 
 import java.math.BigDecimal;
 
@@ -15,13 +16,16 @@ import java.math.BigDecimal;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@Slf4j
 public class Account {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long idAccount;
     private String name;
+
     @Enumerated(EnumType.STRING)
     private TypeAccount typeAccount;
+
     @Enumerated(EnumType.STRING)
     private TypeCurrency currency;
     private BigDecimal currentBalance;

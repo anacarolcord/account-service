@@ -7,6 +7,7 @@ import com.anadev.accountservice.entity.enums.TypeCurrency;
 import java.math.BigDecimal;
 
 
+
 public record AccountResponse(
         Long idAccount,
         String name,

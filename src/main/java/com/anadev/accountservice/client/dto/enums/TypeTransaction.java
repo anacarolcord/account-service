@@ -1,5 +1,8 @@
 package com.anadev.accountservice.client.dto.enums;
 
+import lombok.Getter;
+
+@Getter
 public enum TypeTransaction {
     ENTRADA ("entradaStrategy"),
     SAIDA ("saidaStrategy");
@@ -10,8 +13,5 @@ public enum TypeTransaction {
         this.strategyBeanName = strategyBeanName;
     }
 
-    public String getStrategyBeanName(){
-        return strategyBeanName;
-    }
 }
 
