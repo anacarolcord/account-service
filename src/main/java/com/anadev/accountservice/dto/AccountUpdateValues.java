@@ -11,5 +11,5 @@ import java.math.BigDecimal;
 @Builder
 public record AccountUpdateValues(
         BigDecimal value,
-        TypeTransaction typeTransaction) {
+        TypeTransaction type) {
 }

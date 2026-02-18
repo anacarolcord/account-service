@@ -88,14 +88,14 @@ public class AccountService {
         BigDecimal limitePosTransacao = limiteAtual.subtract(valorCompra);
 
         //se atransacao for de entrada
-        if (data.typeTransaction().equals(TypeTransaction.ENTRADA)) {
+        if (data.type().equals(TypeTransaction.ENTRADA)) {
             //processa o pagamento da fatura atual
             saldoPosTransacao = processCreditCardPayment(data, accountUser);
 
 
         }else {
 
-            if (faturaAtual.add(valorCompra).compareTo(limiteAtual) > 0) {
+            if (valorCompra.compareTo(limiteAtual) > 0) {
                 throw new IllegalArgumentException("Operação proibida, limite insuficiente para a compra! Limite atual R$" + limiteAtual);
             }
 
@@ -121,7 +121,7 @@ public class AccountService {
     @Transactional
     public AccountResponse updateCurrentBalanceAccount(AccountUpdateValues data, Account accountUser){
 
-        TransactionStrategy strategy = context.getBean(data.typeTransaction().getStrategyBeanName(), TransactionStrategy.class);
+        TransactionStrategy strategy = context.getBean(data.type().getStrategyBeanName(), TransactionStrategy.class);
 
         AccountResponse response = strategy.execute(accountUser, data.value());
 
