@@ -97,22 +97,21 @@ public class AccountService {
 
             if (valorCompra.compareTo(limiteAtual) > 0) {
                 throw new IllegalArgumentException("Operação proibida, limite insuficiente para a compra! Limite atual R$" + limiteAtual);
-            }
-
-            if (limitePosTransacao.compareTo(BigDecimal.ZERO)< 0){
+            } else if (limitePosTransacao.compareTo(BigDecimal.ZERO)< 0) {
                 throw new IllegalArgumentException("Operação cancelada, o limite ficaria nulo");
+
             }else{
 
-                limitePosTransacao = limiteAtual.subtract(valorCompra);
                 saldoPosTransacao = faturaAtual.add(valorCompra);
+
+                accountUser.setMonthlyLimit(limitePosTransacao);
+                accountUser.setCurrentBalance(saldoPosTransacao);
 
 
             }
 
         }
 
-        accountUser.setMonthlyLimit(limitePosTransacao);
-        accountUser.setCurrentBalance(saldoPosTransacao);
 
         accountRepository.save(accountUser);
         return AccountResponse.fromEntity(accountUser);
@@ -162,6 +161,7 @@ public class AccountService {
         }else if (valorPagamento.compareTo(currentBalance) == 0){
 
              saldoPosPagamento = currentBalance.subtract(valorPagamento);
+             accountUser.setCurrentBalance(saldoPosPagamento);
              limitePosPagamento = limiteAtual.add(valorPagamento);
              accountUser.setMonthlyLimit(limitePosPagamento);
         }
