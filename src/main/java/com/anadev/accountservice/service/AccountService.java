@@ -8,10 +8,7 @@ import com.anadev.accountservice.entity.Account;
 import com.anadev.accountservice.entity.User;
 import com.anadev.accountservice.entity.enums.TypeAccount;
 import com.anadev.accountservice.exepcions.AccountNottFoundException;
-import com.anadev.accountservice.exepcions.UserNotFoundException;
-import com.anadev.accountservice.messaging.WarningLimitProducer;
 import com.anadev.accountservice.repository.AccountRepository;
-import com.anadev.accountservice.repository.UserRepository;
 import com.anadev.accountservice.service.strategy.TransactionStrategy;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -20,16 +17,14 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class AccountService {
     private final AccountRepository accountRepository;
-    private final UserRepository userRepository;
+    private final UserService userService;
     private final ApplicationContext context;//conteiner do spring que guarda todos os beans
-    private final WarningLimitProducer producerRabbit;
 
     @Transactional
     public AccountResponse addNewAccount (AccountRequest data, Long idUser){
@@ -137,8 +132,7 @@ public class AccountService {
 
     @Transactional
     public User getUser(Long idUser){
-        return userRepository.findById(idUser)
-                .orElseThrow(UserNotFoundException::new);
+        return userService.getUser(idUser);
     }
     
     public BigDecimal getMonthlyLimit(Long idAccount){
