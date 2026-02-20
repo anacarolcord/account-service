@@ -29,24 +29,3 @@ spring:
   docker:
     compose:
       enabled: false
-
-  # --- Mensageria (RabbitMQ) ---
-  rabbitmq:
-    host: localhost
-    port: 5672
-    username: guest
-    password: guest
-
-  # --- Spring Cloud Stream ---
-  cloud:
-    stream:
-      bindings:
-        warning-out-0:
-          destination: warning-exchange
-          content-type: application/json
-      rabbit:
-        bindings:
-          warning-out-0:
-            producer:
-              delayed-exchange: false
-              routing-key-expression: "'warning-key'"

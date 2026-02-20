@@ -37,13 +37,6 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     runtimeOnly 'com.mysql:mysql-connector-j'
 
-    // ---- Mensageria (Standard) ----
-    implementation 'org.springframework.boot:spring-boot-starter-amqp'
-    implementation 'org.springframework.kafka:spring-kafka'
-
-    // ---- Spring Cloud Stream (Para usar StreamBridge) ----
-    // O starter-stream-rabbit já engloba o core do stream e o binder do rabbit
-    implementation 'org.springframework.cloud:spring-cloud-starter-stream-rabbit'
 
     // ---- Produtividade ----
     compileOnly 'org.projectlombok:lombok'
