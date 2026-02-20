@@ -1,11 +1,14 @@
+# --- Configurações de Servidor (RAIZ DO ARQUIVO) ---
+server:
+  port: 8082
+  error:
+    include-stacktrace: never
+    include-message: always
+
+# --- Configurações do Spring ---
 spring:
   application:
     name: accountservice
-
-  server:
-    error:
-      include-stracktrace: never
-      include-message: always
 
   # --- Banco de Dados (MySQL) ---
   datasource:
@@ -22,23 +25,22 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect
 
-  # --- Docker Compose ---
+  # --- Docker ---
   docker:
     compose:
       enabled: false
 
-  # --- Configura��es do RabbitMQ (Conex�o) ---
+  # --- Mensageria (RabbitMQ) ---
   rabbitmq:
     host: localhost
     port: 5672
     username: guest
     password: guest
 
-  # --- Spring Cloud Stream / RabbitMQ Cloud ---
+  # --- Spring Cloud Stream ---
   cloud:
     stream:
       bindings:
-        # Mapeia o binding 'warning' para a exchange 'warning-exchange'
         warning-out-0:
           destination: warning-exchange
           content-type: application/json
