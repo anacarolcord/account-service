@@ -2,6 +2,11 @@ spring:
   application:
     name: accountservice
 
+  server:
+    error:
+      include-stracktrace: never
+      include-message: always
+
   # --- Banco de Dados (MySQL) ---
   datasource:
     url: jdbc:mysql://localhost:3306/account?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true

@@ -92,7 +92,7 @@ public class AccountService {
         //se atransacao for de entrada
         if (data.type().equals(TypeTransaction.ENTRADA)) {
             //processa o pagamento da fatura atual
-            saldoPosTransacao = processCreditCardPayment(data, accountUser);
+            processCreditCardPayment(data, accountUser);
 
 
         }else {
