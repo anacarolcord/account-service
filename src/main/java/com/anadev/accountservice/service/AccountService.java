@@ -13,7 +13,9 @@ import com.anadev.accountservice.service.strategy.TransactionStrategy;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationContext;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -96,10 +98,9 @@ public class AccountService {
         }else {
 
             if (valorCompra.compareTo(limiteAtual) > 0) {
-                throw new IllegalArgumentException("Operação proibida, limite insuficiente para a compra! Limite atual R$" + limiteAtual);
+                throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "Operação negada: O valor da compra excede seu limite mensal configurado.");
             } else if (limitePosTransacao.compareTo(BigDecimal.ZERO)< 0) {
-                throw new IllegalArgumentException("Operação cancelada, o limite ficaria nulo");
-
+                throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "Operação negada: Limite disponível insuficiente para completar esta transação.");
             }else{
 
                 saldoPosTransacao = faturaAtual.add(valorCompra);
