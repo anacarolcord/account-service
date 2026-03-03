@@ -4,9 +4,11 @@ import com.anadev.accountservice.dto.AccountResponse;
 import com.anadev.accountservice.entity.Account;
 import com.anadev.accountservice.exepcions.InsufficientBalanceException;
 import com.anadev.accountservice.exepcions.InvalidValueException;
+import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 
+@Component("saidaStrategy")
 public class SaidaStrategy implements TransactionStrategy{
 
     @Override
